@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "last_updated": "2025-08-31T00:00:00Z",
+  "countries": {
+    "PT": {
+      "frequency": "monthly",
+      "latest_draw_id": "",
+      "latest_draw_date": "",
+      "data_urls": ["pt/milhao_2025.json"],
+      "sha256": ""
+    }
+  }
+}
