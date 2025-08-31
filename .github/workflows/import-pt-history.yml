@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CAMO_DIR: a1b2c3d4
-      CSV_PT: a1b2c3d4/input/pt/milhao_2016_2024.csv
+      CSV_PT: a1b2c3d4/pt/milhao_2016_2024.csv
       MANIFEST: a1b2c3d4/manifest.json
       PT_DIR: a1b2c3d4/pt
     steps:
