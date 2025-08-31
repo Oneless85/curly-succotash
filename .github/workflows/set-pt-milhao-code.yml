@@ -1,0 +1,65 @@
+name: Set PT Milhão code (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      draw_id:
+        description: "ID do sorteio (ex.: 08/2025)"
+        required: true
+      code:
+        description: "Código vencedor (ex.: ABC12345)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  set_code:
+    runs-on: ubuntu-latest
+    env:
+      CAMO_DIR: a1b2c3d4
+      PT_FILE: a1b2c3d4/pt/milhao_2025.json
+      MANIFEST: a1b2c3d4/manifest.json
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Update JSON with provided code
+        env:
+          DRAW_ID: ${{ github.event.inputs.draw_id }}
+          CODE: ${{ github.event.inputs.code }}
+        run: |
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Atualiza code e retrieved_at no item do mês pedido
+          TMP=$(mktemp)
+          jq --arg did "$DRAW_ID" --arg code "$CODE" --arg now "$NOW" '
+            (.items[] | select(.draw_id == $did) | .code) = $code
+            | (.items[] | select(.draw_id == $did) | .retrieved_at) = $now
+          ' "$PT_FILE" > "$TMP"
+          mv "$TMP" "$PT_FILE"
+
+          # Atualiza manifest (latest_draw_id + last_updated)
+          TMPM=$(mktemp)
+          jq --arg did "$DRAW_ID" --arg now "$NOW" '
+            .countries.PT.latest_draw_id = $did
+            | .last_updated = $now
+          ' "$MANIFEST" > "$TMPM"
+          mv "$TMPM" "$MANIFEST"
+
+          echo "Atualizado $PT_FILE e $MANIFEST"
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "update(PT): ${{
+            github.event.inputs.draw_id
+          }} code ${{
+            github.event.inputs.code
+          }}" || echo "Nada para commitar"
+          git push
