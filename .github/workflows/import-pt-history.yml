@@ -1,0 +1,162 @@
+name: Import PT Milhão history (CSV → JSON)
+
+on:
+  workflow_dispatch: {}   # corre manualmente
+
+permissions:
+  contents: write
+
+jobs:
+  import_pt_history:
+    runs-on: ubuntu-latest
+    env:
+      CAMO_DIR: a1b2c3d4
+      CSV_PT: a1b2c3d4/input/pt/milhao_2016_2024.csv
+      MANIFEST: a1b2c3d4/manifest.json
+      PT_DIR: a1b2c3d4/pt
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Import CSV into year JSON files
+        run: |
+          python - << 'PY'
+          import csv, json, os, sys
+          from datetime import datetime, timezone
+
+          CAMO_DIR = os.environ["CAMO_DIR"]
+          CSV_PT   = os.environ["CSV_PT"]
+          MANIFEST = os.environ["MANIFEST"]
+          PT_DIR   = os.environ["PT_DIR"]
+
+          def load_json(path, fallback=None):
+            if not os.path.exists(path):
+              return fallback if fallback is not None else {}
+            with open(path, "r", encoding="utf-8") as f:
+              return json.load(f)
+
+          def save_json(path, data):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+              json.dump(data, f, ensure_ascii=False, indent=2)
+
+          # Ler CSV (2016–2024)
+          rows = []
+          with open(CSV_PT, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+              # Campos obrigatórios: draw_date(YYYY-MM-DD), draw_id(NN/YYYY), code
+              draw_date = (r.get("draw_date") or "").strip()
+              draw_id   = (r.get("draw_id")   or "").strip()
+              code      = (r.get("code")      or "").strip()
+              source_url= (r.get("source_url")or "").strip()
+              notes     = (r.get("notes")     or "").strip()
+
+              if not draw_date or not draw_id or not code:
+                # linha incompleta → ignora em silêncio
+                continue
+
+              try:
+                year = int(draw_date.split("-")[0])
+              except:
+                continue
+
+              rows.append({
+                "year": year,
+                "draw_date": draw_date,  # histórico: manter data sem hora
+                "draw_id": draw_id,
+                "code": code,
+                "source_url": source_url,
+                "notes": notes
+              })
+
+          # Atualizar ficheiros por ano
+          now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+          years_touched = set()
+
+          for r in rows:
+            year = r["year"]
+            path = os.path.join(PT_DIR, f"milhao_{year}.json")
+            data = load_json(path, {
+              "country": "PT",
+              "year": year,
+              "frequency": "weekly" if year < 2025 else "monthly",
+              "items": []
+            })
+
+            items = data.get("items", [])
+            # procurar item existente pelo draw_id
+            idx = next((i for i, it in enumerate(items) if it.get("draw_id") == r["draw_id"]), None)
+
+            # construir item
+            item = {
+              "draw_id": r["draw_id"],
+              "draw_date": r["draw_date"],
+              "code": r["code"],
+              "source_url": r["source_url"] or "https://www.jogossantacasa.pt/web/SCCartazResult/milhao",
+              "source_type": "official" if "jogossantacasa" in (r["source_url"] or "").lower() else "aggregator",
+              "retrieved_at": now_iso
+            }
+            if r["notes"]:
+              item["notes"] = r["notes"]
+
+            if idx is None:
+              items.append(item)
+            else:
+              items[idx] = item
+
+            # ordenar por data ascendente (opcional)
+            try:
+              items.sort(key=lambda it: it.get("draw_date",""))
+            except:
+              pass
+
+            data["items"] = items
+            save_json(path, data)
+            years_touched.add(year)
+
+          # Atualizar manifest (latest_draw_id/latest_draw_date/last_updated)
+          manifest = load_json(MANIFEST)
+          pt = (((manifest.get("countries") or {}).get("PT")) or {})
+          data_urls = pt.get("data_urls") or []
+
+          latest_date = None
+          latest_id = ""
+          # vasculhar todos os ficheiros listados no manifest
+          for url in data_urls:
+            jpath = url  # já é um caminho relativo no repo
+            if not os.path.exists(jpath):
+              continue
+            jdata = load_json(jpath, {})
+            for it in jdata.get("items", []):
+              dd = it.get("draw_date")
+              if not dd:
+                continue
+              # comparar por string YYYY-MM-DD é OK
+              if latest_date is None or dd > latest_date:
+                latest_date = dd
+                latest_id = it.get("draw_id","")
+
+          if latest_date:
+            pt["latest_draw_id"] = latest_id
+            pt["latest_draw_date"] = latest_date
+
+          manifest.setdefault("countries", {})["PT"] = pt
+          manifest["last_updated"] = now_iso
+          save_json(MANIFEST, manifest)
+
+          print(f"Updated years: {sorted(list(years_touched))}")
+          PY
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "import(PT): CSV 2016–2024 → JSON" || echo "Nada para commitar"
+          git push
