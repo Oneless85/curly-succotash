@@ -1,0 +1,59 @@
+name: Update PT Milhão (base test)
+
+on:
+  workflow_dispatch: {}     # correr manualmente
+  schedule:
+    - cron: "0 22 * * 5"    # todas as sextas às 22:00 UTC (vamos filtrar no script)
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Is it the last Friday of the month?
+        id: last_friday
+        run: |
+          TZ=Europe/Lisbon
+          # hoje em Lisboa
+          TODAY=$(date +%Y-%m-%d)
+          DOW=$(date +%u) # 1..7 (2ª..Dom)
+          # último dia do mês atual
+          LAST_DAY=$(date -d "$(date +%Y-%m-01) +1 month -1 day" +%Y-%m-%d)
+          # recua até à 6ª-feira
+          CANDIDATE=$LAST_DAY
+          while [ "$(date -d "$CANDIDATE" +%u)" != "5" ]; do
+            CANDIDATE=$(date -d "$CANDIDATE -1 day" +%Y-%m-%d)
+          done
+          echo "today=$TODAY"
+          echo "last_friday=$CANDIDATE"
+          if [ "$TODAY" != "$CANDIDATE" ]; then
+            echo "not_last_friday=true" >> $GITHUB_OUTPUT
+          else
+            echo "not_last_friday=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Exit early if not last Friday (only for cron)
+        if: github.event_name == 'schedule' && steps.last_friday.outputs.not_last_friday == 'true'
+        run: echo "Skipping (not last Friday)." && exit 0
+
+      - name: Bump manifest last_updated (test only)
+        run: |
+          FILE="a1b2c3d4/manifest.json"
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          # substitui o valor de last_updated mantendo o resto
+          sed -i -E 's/"last_updated": *"[^"]*"/"last_updated": "'$NOW'"/' "$FILE"
+          echo "Updated $FILE to $NOW"
+          git status
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: bump manifest last_updated (test)" || echo "No changes to commit"
+          git push
