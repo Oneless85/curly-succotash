@@ -1,24 +1,27 @@
 {
-  "country": "PT",
-  "year": 2025,
-  "frequency": "monthly",
-  "items": [
-    {
-      "draw_id": "07/2025",
-      "draw_date": "2025-07-26T22:00:00+01:00",
-      "code": "XXX00000",
-      "source_url": "https://www.jogossantacasa.pt/web/SCCartazResult/m1lhao",
-      "source_type": "official",
-      "retrieved_at": "2025-07-26T23:00:00Z",
-      "notes": "Primeiro sorteio mensal"
-    },
-    {
-      "draw_id": "08/2025",
-      "draw_date": "2025-08-29T22:00:00+01:00",
-      "code": "YYY11111",
-      "source_url": "https://www.jogossantacasa.pt/web/SCCartazResult/m1lhao",
-      "source_type": "official",
-      "retrieved_at": "2025-08-29T23:00:00Z"
+  "schema_version": 1,
+  "last_updated": "2025-08-31T00:00:00Z",
+  "countries": {
+    "PT": {
+      "name": "M1lhão",
+      "country_code": "PT",
+      "timezone": "Europe/Lisbon",
+      "frequency": "monthly",
+      "latest_draw_id": "",
+      "latest_draw_date": "",
+      "data_urls": [
+        "a1b2c3d4/pt/milhao_2025.json",
+        "a1b2c3d4/pt/milhao_2024.json",
+        "a1b2c3d4/pt/milhao_2023.json",
+        "a1b2c3d4/pt/milhao_2022.json",
+        "a1b2c3d4/pt/milhao_2021.json",
+        "a1b2c3d4/pt/milhao_2020.json",
+        "a1b2c3d4/pt/milhao_2019.json",
+        "a1b2c3d4/pt/milhao_2018.json",
+        "a1b2c3d4/pt/milhao_2017.json",
+        "a1b2c3d4/pt/milhao_2016.json"
+      ],
+      "sha256": ""
     }
-  ]
+  }
 }
