@@ -1,0 +1,48 @@
+{
+  "country": "PT",
+  "year": 2025,
+  "frequency": "monthly",
+  "items": [
+    {
+      "draw_id": "08/2025",
+      "draw_date": "2025-08-29T22:00:00+01:00",
+      "code": "",
+      "source_url": "https://www.jogossantacasa.pt/web/SCCartazResult/m1lhao",
+      "source_type": "official",
+      "retrieved_at": "",
+      "notes": "Primeiro sorteio mensal"
+    },
+    {
+      "draw_id": "09/2025",
+      "draw_date": "2025-09-26T22:00:00+01:00",
+      "code": "",
+      "source_url": "https://www.jogossantacasa.pt/web/SCCartazResult/m1lhao",
+      "source_type": "official",
+      "retrieved_at": ""
+    },
+    {
+      "draw_id": "10/2025",
+      "draw_date": "2025-10-31T22:00:00+00:00",
+      "code": "",
+      "source_url": "https://www.jogossantacasa.pt/web/SCCartazResult/m1lhao",
+      "source_type": "official",
+      "retrieved_at": ""
+    },
+    {
+      "draw_id": "11/2025",
+      "draw_date": "2025-11-28T22:00:00+00:00",
+      "code": "",
+      "source_url": "https://www.jogossantacasa.pt/web/SCCartazResult/m1lhao",
+      "source_type": "official",
+      "retrieved_at": ""
+    },
+    {
+      "draw_id": "12/2025",
+      "draw_date": "2025-12-26T22:00:00+00:00",
+      "code": "",
+      "source_url": "https://www.jogossantacasa.pt/web/SCCartazResult/m1lhao",
+      "source_type": "official",
+      "retrieved_at": ""
+    }
+  ]
+}
